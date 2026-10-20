@@ -1,0 +1,39 @@
+# All paths are relative to the project root.
+# Column names are the cleaned snake_case names (renaming happens first in ingest.py).
+
+paths:
+  raw_data: data/raw/Telco_customer_churn.xlsx
+  processed_data: data/processed/churn.parquet
+  model: models/churn_model.pkl
+
+target_col: churn_value
+
+# Kept for joining/tracking, never used as a feature
+id_cols:
+  - customer_id
+
+# Columns to drop, grouped by reason
+drop_cols:
+  # single value for every row
+  constant:
+    - count
+    - country
+    - state
+  # leak the label: known only after churn, or derived from it
+  leakage:
+    - churn_label
+    - churn_score
+    - churn_reason
+    - cltv
+  # high cardinality / duplicates; revisit in feature engineering
+  geo:
+    - city
+    - zip_code
+    - lat_long
+    - latitude
+    - longitude
+
+split:
+  test_size: 0.2
+  random_state: 42
+  stratify: true

@@ -1,0 +1,36 @@
+# virtual environment
+.venv/
+.venv-*/
+
+# python bytecode
+__pycache__/
+*.pyc
+
+# jupyter
+.ipynb_checkpoints/
+
+# data: never commit datasets, keep folder structure via .gitkeep
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
+# models: artifacts are tracked by MLflow, not git
+models/*
+!models/.gitkeep
+
+# mlflow local tracking
+mlruns/
+mlartifacts/
+
+# logs
+logs/
+
+# secrets
+.env
+
+# tool caches
+.pytest_cache/
+
+# editor
+.vscode/
