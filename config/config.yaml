@@ -44,6 +44,13 @@ features:
     - tenure_months
     - monthly_charges
     - total_charges
+    # engineered in src/features.py
+    - is_new_customer
+    - num_addon_services
+    - has_auto_payment
+    - has_family
+    - avg_monthly_spend
+    - charge_increase
   categorical:
     - gender
     - senior_citizen
