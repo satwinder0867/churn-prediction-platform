@@ -4,6 +4,8 @@
 paths:
   raw_data: data/raw/Telco_customer_churn.xlsx
   processed_data: data/processed/churn.parquet
+  train_data: data/processed/train.parquet
+  test_data: data/processed/test.parquet
   model: models/churn_model.pkl
 
 target_col: churn_value

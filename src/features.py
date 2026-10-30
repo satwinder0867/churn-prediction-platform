@@ -62,6 +62,28 @@ def charge_increase(df: pd.DataFrame) -> pd.Series:
     return df["monthly_charges"] - avg_monthly_spend(df)
 
 
+def select_columns(df: pd.DataFrame, columns: list) -> pd.DataFrame:
+    """Keep only the model's input columns, in a fixed order.
+
+    Makes the pipeline independent of column order and ignores extra columns
+    (e.g. customer_id) sent at scoring time; a missing column raises KeyError.
+    """
+    return df[columns]
+
+
+def selected_names_out(transformer, _input_features) -> list:
+    """Column names after select_columns: exactly the columns it keeps."""
+    return list(transformer.kw_args["columns"])
+
+
+def feature_names_out(_transformer, input_features) -> list:
+    """Column names after add_features, so the pipeline can report feature names.
+
+    scikit-learn passes the transformer as the first argument; it is not needed here.
+    """
+    return list(input_features) + ENGINEERED_FEATURES
+
+
 def add_features(df: pd.DataFrame) -> pd.DataFrame:
     """Add engineered features. Row-wise, deterministic, never uses the target."""
     df = df.copy()

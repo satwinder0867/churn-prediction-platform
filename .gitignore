@@ -21,6 +21,7 @@ models/*
 
 # mlflow local tracking
 mlruns/
+mlflow.db
 mlartifacts/
 
 # logs
