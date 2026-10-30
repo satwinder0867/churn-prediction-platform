@@ -46,3 +46,15 @@ def expected_profit_of(actions, p, value, biz: dict) -> np.ndarray:
     ev_email, ev_call = expected_profits(np.asarray(p, dtype=float), value, biz)
     actions = pd.Series(actions)
     return np.select([actions == "email", actions == "call"], [ev_email, ev_call], 0.0)
+
+
+def recommend(p, value, biz: dict) -> np.ndarray:
+    """Best action per customer WITHOUT the call-capacity cap (for one-off requests).
+
+    The capacity cap needs the whole batch ("call the top 3%"), so it is only
+    applied by choose_actions in batch scoring.
+    """
+    ev_email, ev_call = expected_profits(np.asarray(p, dtype=float), value, biz)
+    best = np.where(ev_call > np.maximum(ev_email, 0), "call",
+                    np.where(ev_email > 0, "email", "none"))
+    return best.astype(object)
