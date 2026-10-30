@@ -6,6 +6,8 @@ paths:
   processed_data: data/processed/churn.parquet
   train_data: data/processed/train.parquet
   test_data: data/processed/test.parquet
+  scoring_input: data/processed/churn.parquet   # demo: score every known customer
+  scored_dir: data/scored
   model: models/churn_model.pkl
 
 target_col: churn_value

@@ -20,6 +20,7 @@ from sklearn.calibration import calibration_curve
 from sklearn.metrics import average_precision_score, brier_score_loss, roc_auc_score
 
 from src.ingest import PROJECT_ROOT, load_config, setup_logging
+from src.policy import choose_actions, customer_value
 
 LOG_PATH = PROJECT_ROOT / "logs" / "evaluate.log"
 
@@ -66,29 +67,6 @@ def calibration_report(y: pd.Series, p: np.ndarray, out_path) -> dict:
 
 # ---------------------------------------------------------------- 3. business decisions
 
-def choose_actions(p: np.ndarray, value: np.ndarray, biz: dict) -> np.ndarray:
-    """Pick the action with the highest expected profit per customer.
-
-    expected profit = p(churn) x save_rate x customer value - cost
-    Calls are capped by team capacity: the customers where a call adds the most
-    over an email get called; the rest fall back to the best other option.
-    """
-    email, call = biz["email"], biz["call"]
-    ev_email = p * email["save_rate"] * value - email["cost"]
-    ev_call = p * call["save_rate"] * value - call["cost"]
-    ev_without_call = np.maximum(ev_email, 0)
-
-    actions = np.where(ev_email > 0, "email", "none").astype(object)
-    wants_call = ev_call > ev_without_call
-    capacity = int(biz["max_call_share"] * len(p))
-
-    gain = np.where(wants_call, ev_call - ev_without_call, -np.inf)
-    top = np.argsort(-gain)[:capacity]
-    top = top[wants_call[top]]
-    actions[top] = "call"
-    return actions
-
-
 def campaign_value(actions: np.ndarray, churned: np.ndarray, value: np.ndarray,
                    biz: dict) -> dict:
     """Estimated net savings of a set of actions, using the real test labels."""
@@ -109,7 +87,7 @@ def campaign_value(actions: np.ndarray, churned: np.ndarray, value: np.ndarray,
 def compare_strategies(p, test: pd.DataFrame, target: str, biz: dict) -> pd.DataFrame:
     """Net savings of the model policy vs simple alternatives."""
     churned = test[target].to_numpy()
-    value = test["monthly_charges"].to_numpy() * biz["value_months"]
+    value = customer_value(test["monthly_charges"], biz)
     n = len(test)
 
     strategies = {
@@ -179,7 +157,7 @@ def main() -> None:
     # 3. business value
     strategies = compare_strategies(p, test, target, biz)
     logger.info("Campaign on test set:\n%s", strategies.to_string())
-    value = test["monthly_charges"].to_numpy() * biz["value_months"]
+    value = customer_value(test["monthly_charges"], biz)
     tiers = tier_metrics(choose_actions(p, value, biz), y.to_numpy())
     logger.info("Called customers who really churned: %.1f%% | churners reached: %.1f%%",
                 100 * tiers["call_precision"], 100 * tiers["contacted_recall"])
