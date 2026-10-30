@@ -76,3 +76,20 @@ cv:
 
 mlflow:
   experiment_name: churn-baseline
+
+# class_weight="balanced" inflates probabilities; recalibrate on training data
+calibration:
+  method: sigmoid
+
+# Retention campaign economics (assumptions from docs/problem_framing.md)
+business:
+  value_months: 12          # a saved customer stays this many more months
+  email:
+    cost: 1.0
+    save_rate: 0.10         # share of contacted churners an email keeps
+  call:
+    cost: 50.0              # agent time + discount coupon
+    save_rate: 0.30
+  max_call_share: 0.03      # call team capacity: 3% of customers per campaign
+
+reports_dir: reports

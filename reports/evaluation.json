@@ -1,0 +1,14 @@
+{
+  "test_pr_auc": 0.6453344727337652,
+  "test_roc_auc": 0.8489653568937456,
+  "baseline_random_pr_auc": 0.2654364797728886,
+  "baseline_rule_pr_auc": 0.4063417338825049,
+  "brier": 0.13574985246501903,
+  "brier_baseline": 0.19497995497866552,
+  "mean_predicted": 0.26652600094920714,
+  "actual_churn_rate": 0.2654364797728886,
+  "max_calibration_gap": 0.0632919887045868,
+  "call_precision": 0.7142857142857143,
+  "contacted_recall": 0.9946524064171123,
+  "net_savings_model": 36330.02
+}

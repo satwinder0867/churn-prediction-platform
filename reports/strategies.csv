@@ -1,0 +1,6 @@
+strategy,emails,calls,value_saved,cost,net_savings
+do nothing,0,0,0.0,0.0,0.0
+email everyone,1409,0,32657.88,1409.0,31248.88
+rule: email month-to-month,773,0,27981.9,773.0,27208.9
+model policy,1132,42,39562.02,3232.0,36330.02
+perfect foresight (upper bound),332,42,43338.84,2432.0,40906.84

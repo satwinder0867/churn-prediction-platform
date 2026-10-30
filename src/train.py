@@ -11,12 +11,19 @@ import joblib
 import mlflow
 import mlflow.sklearn
 import pandas as pd
+import skops.io
 from lightgbm import LGBMClassifier
+from sklearn.calibration import CalibratedClassifierCV
 from sklearn.compose import ColumnTransformer
 from sklearn.dummy import DummyClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import average_precision_score
-from sklearn.model_selection import StratifiedKFold, cross_validate, train_test_split
+from sklearn.metrics import average_precision_score, brier_score_loss
+from sklearn.model_selection import (
+    StratifiedKFold,
+    cross_val_predict,
+    cross_validate,
+    train_test_split,
+)
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import FunctionTransformer, OneHotEncoder, StandardScaler
 
@@ -183,6 +190,33 @@ def pick_best(results: pd.DataFrame) -> pd.Series:
     return chosen
 
 
+def calibrate(pipe: Pipeline, X, y, method: str, cv) -> CalibratedClassifierCV:
+    """Wrap the pipeline so its probabilities match real churn rates.
+
+    Brier scores (lower = better) are measured with cross-validation on the
+    training set only, so the test set stays untouched.
+    """
+    raw = cross_val_predict(pipe, X, y, cv=cv, method="predict_proba")[:, 1]
+    calibrated = CalibratedClassifierCV(pipe, method=method, cv=cv)
+    cal = cross_val_predict(calibrated, X, y, cv=cv, method="predict_proba")[:, 1]
+    logger.info("Calibration (CV on train): mean predicted %.3f -> %.3f (actual %.3f), "
+                "Brier %.4f -> %.4f", raw.mean(), cal.mean(), y.mean(),
+                brier_score_loss(y, raw), brier_score_loss(y, cal))
+    return calibrated.fit(X, y)
+
+
+def skops_trusted_types(model) -> list:
+    """Types skops must trust to reload the model: scikit-learn's own + our functions.
+
+    Anything else is unexpected, so we stop instead of trusting it blindly.
+    """
+    needed = skops.io.get_untrusted_types(data=skops.io.dumps(model))
+    unexpected = [t for t in needed if not t.startswith("sklearn.") and t not in TRUSTED_TYPES]
+    if unexpected:
+        raise ValueError(f"Model contains unexpected types: {unexpected}")
+    return needed
+
+
 # ---------------------------------------------------------------- main
 
 def main() -> None:
@@ -214,18 +248,21 @@ def main() -> None:
     logger.info("Rule baseline (month-to-month) PR-AUC: %.3f", rule_baseline(X_train, y_train))
     results = run_experiments(X_train, y_train, numeric, categorical, cfg)
 
-    # 3. final model: refit the chosen pipeline on the full training set and save it
+    # 3. final model: the chosen pipeline, calibrated and fitted on the full training set
     chosen = pick_best(results)
     model = get_models(cfg["split"]["random_state"])[chosen["model"]]
-    final_pipe = build_pipeline(model, numeric, categorical, chosen["feature_set"] == "engineered")
-    final_pipe.fit(X_train, y_train)
+    pipe = build_pipeline(model, numeric, categorical, chosen["feature_set"] == "engineered")
+    cv = StratifiedKFold(n_splits=cfg["cv"]["n_splits"], shuffle=True,
+                         random_state=cfg["split"]["random_state"])
+    final_pipe = calibrate(pipe, X_train, y_train, cfg["calibration"]["method"], cv)
 
     model_path = PROJECT_ROOT / paths["model"]
     model_path.parent.mkdir(parents=True, exist_ok=True)
     joblib.dump(final_pipe, model_path)
 
     with mlflow.start_run(run_name=f"final-{chosen['model']}-{chosen['feature_set']}"):
-        mlflow.log_params({"model": chosen["model"], "feature_set": chosen["feature_set"]})
+        mlflow.log_params({"model": chosen["model"], "feature_set": chosen["feature_set"],
+                           "calibration": cfg["calibration"]["method"]})
         mlflow.log_metrics({k: chosen[k] for k in ["cv_pr_auc", "cv_pr_auc_std", "cv_roc_auc"]})
         # The example keeps the real dtypes (ints stay ints) so the logged schema matches
         # real input. MLflow warns that int columns can't hold missing values; our input
@@ -236,7 +273,7 @@ def main() -> None:
                 final_pipe,
                 name="model",
                 input_example=X_train.head(3),
-                skops_trusted_types=TRUSTED_TYPES,
+                skops_trusted_types=skops_trusted_types(final_pipe),
             )
 
     logger.info("Saved final model to %s", model_path)
