@@ -31,6 +31,7 @@ from src.features import (
     ENGINEERED_FEATURES,
     add_features,
     feature_names_out,
+    get_feature_lists,
     select_columns,
     selected_names_out,
 )
@@ -55,17 +56,6 @@ def load_processed(path) -> pd.DataFrame:
     df = pd.read_parquet(path)
     logger.info("Loaded processed data: %s", df.shape)
     return df
-
-
-def get_feature_lists(cfg: dict) -> tuple[list, list]:
-    """Return (raw numeric, categorical) columns.
-
-    Engineered features are listed in the config but created inside the
-    pipeline, so they are not expected in the input data.
-    """
-    numeric = [c for c in cfg["features"]["numeric"] if c not in ENGINEERED_FEATURES]
-    categorical = cfg["features"]["categorical"]
-    return numeric, categorical
 
 
 def check_columns(df: pd.DataFrame, cols: list) -> None:

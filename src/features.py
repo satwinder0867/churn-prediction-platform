@@ -84,6 +84,17 @@ def feature_names_out(_transformer, input_features) -> list:
     return list(input_features) + ENGINEERED_FEATURES
 
 
+def get_feature_lists(cfg: dict) -> tuple[list, list]:
+    """Return (raw numeric, categorical) columns.
+
+    Engineered features are listed in the config but created inside the
+    pipeline, so they are not expected in the input data.
+    """
+    numeric = [c for c in cfg["features"]["numeric"] if c not in ENGINEERED_FEATURES]
+    categorical = cfg["features"]["categorical"]
+    return numeric, categorical
+
+
 def add_features(df: pd.DataFrame) -> pd.DataFrame:
     """Add engineered features. Row-wise, deterministic, never uses the target."""
     df = df.copy()

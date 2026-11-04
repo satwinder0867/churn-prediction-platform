@@ -1,0 +1,9 @@
+# Serving-only dependencies for the Docker image (training/notebook libs are in requirements.txt).
+# Versions must match requirements.txt: the pickled model needs the same scikit-learn.
+fastapi==0.142.2
+uvicorn==0.54.0
+pandas==3.0.6
+numpy==2.5.3
+scikit-learn==1.9.1
+joblib==1.6.0
+PyYAML==6.0.3

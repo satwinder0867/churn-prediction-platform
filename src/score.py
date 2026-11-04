@@ -15,9 +15,9 @@ import joblib
 import numpy as np
 import pandas as pd
 
+from src.features import get_feature_lists
 from src.ingest import PROJECT_ROOT, load_config, setup_logging
 from src.policy import choose_actions, customer_value, expected_profit_of
-from src.train import get_feature_lists
 
 LOG_PATH = PROJECT_ROOT / "logs" / "score.log"
 

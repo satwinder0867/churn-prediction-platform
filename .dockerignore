@@ -1,0 +1,28 @@
+# Keep the build context small: only what the image needs is sent to Docker.
+.venv/
+.venv-*/
+__pycache__/
+*.pyc
+.git/
+.gitignore
+.dockerignore
+Dockerfile
+
+# data, experiments and outputs (the model in models/ IS needed)
+data/
+mlruns/
+mlartifacts/
+mlflow.db
+logs/
+reports/
+notebooks/
+
+# dev only
+tests/
+docs/
+.pytest_cache/
+.ipynb_checkpoints/
+.vscode/
+.env
+requirements.txt
+requirements-lock.txt

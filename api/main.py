@@ -15,10 +15,10 @@ import pandas as pd
 from fastapi import FastAPI, Request
 
 from api.schemas import BatchRequest, BatchResponse, Customer, ModelInfo, Prediction
+from src.features import get_feature_lists
 from src.ingest import PROJECT_ROOT, load_config, setup_logging
 from src.policy import customer_value, expected_profits, recommend
 from src.score import model_fingerprint, risk_reasons
-from src.train import get_feature_lists
 
 logger = logging.getLogger(__name__)
 
